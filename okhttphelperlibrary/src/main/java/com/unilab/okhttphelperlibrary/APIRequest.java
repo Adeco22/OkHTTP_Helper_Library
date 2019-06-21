@@ -8,7 +8,6 @@ import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
 import android.util.Log;
-import android.util.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,15 +27,15 @@ import okhttp3.Response;
  * </p>
  *
  * @author Anthony Deco
- * @version 0.7.2 (alpha)
+ * @version 0.8.0 (alpha)
  * @since 05/02/2019, 4:13 PM
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class APIRequest {
     private static final String TAG = APIRequest.class.getSimpleName();
     private String request_URL;
-    private ArrayList<Pair<String, String>> request_headers;
-    private ArrayList<Pair<String, String>> request_parameters;
+    private ArrayList<Header> request_headers;
+    private ArrayList<Parameter> request_parameters;
     private onAPIRequestListener listener;
     private Handler handler;
     private int requestType;
@@ -54,10 +53,25 @@ public class APIRequest {
     private int REQUEST_TIMEOUT = 30;
 
     // API Helper class request types
+    /**
+     * Get request type
+     */
     public static final int GET_REQUEST = 822;
+    /**
+     * Post request type
+     */
     public static final int POST_REQUEST = 253;
+    /**
+     * Put request type
+     */
     public static final int PUT_REQUEST = 704;
+    /**
+     * Patch request type
+     */
     public static final int PATCH_REQUEST = 880;
+    /**
+     * Delete request type
+     */
     public static final int DELETE_REQUEST = 254;
 
     // API Helper Class error codes
@@ -100,8 +114,8 @@ public class APIRequest {
      * @param requestType        int type of Request, default value is GET,
      *                           see {@link #GET_REQUEST}
      */
-    public APIRequest(String request_URL, ArrayList<Pair<String, String>> request_headers,
-                      ArrayList<Pair<String, String>> request_parameters,
+    public APIRequest(String request_URL, ArrayList<Header> request_headers,
+                      ArrayList<Parameter> request_parameters,
                       onAPIRequestListener listener, int requestType) {
         this.request_URL = request_URL;
         this.request_headers = request_headers;
@@ -120,8 +134,8 @@ public class APIRequest {
      *                           used for the API request body
      * @param listener           {@link onAPIRequestListener} interface of the API request
      */
-    public APIRequest(String request_URL, ArrayList<Pair<String, String>> request_headers,
-                      ArrayList<Pair<String, String>> request_parameters,
+    public APIRequest(String request_URL, ArrayList<Header> request_headers,
+                      ArrayList<Parameter> request_parameters,
                       onAPIRequestListener listener) {
         this(request_URL, request_headers, request_parameters, listener, GET_REQUEST);
     }
@@ -137,8 +151,8 @@ public class APIRequest {
      * @param requestType        int type of Request, default value is GET,
      *                           see {@link #GET_REQUEST}
      */
-    public APIRequest(String request_URL, ArrayList<Pair<String, String>> request_headers,
-                      ArrayList<Pair<String, String>> request_parameters, int requestType) {
+    public APIRequest(String request_URL, ArrayList<Header> request_headers,
+                      ArrayList<Parameter> request_parameters, int requestType) {
         this(request_URL, request_headers, request_parameters, null, requestType);
     }
 
@@ -146,13 +160,13 @@ public class APIRequest {
      * Constructor of the class without interface connection and request type
      *
      * @param request_URL        {@link String} base URL to be requested from
-     * @param request_headers    ArrayList<Pair<String, String>> key-value pair
+     * @param request_headers    ArrayList<Header> key-value pair
      *                           used for the API request headers
-     * @param request_parameters ArrayList<Pair<String, String>> key-value pair
+     * @param request_parameters ArrayList<Parameter> key-value pair
      *                           used for the API request body
      */
-    public APIRequest(String request_URL, ArrayList<Pair<String, String>> request_headers,
-                      ArrayList<Pair<String, String>> request_parameters) {
+    public APIRequest(String request_URL, ArrayList<Header> request_headers,
+                      ArrayList<Parameter> request_parameters) {
         this(request_URL, request_headers, request_parameters, null);
     }
 
@@ -215,7 +229,7 @@ public class APIRequest {
      *
      * @param headers ArrayList<Pair<String, String>> new request headers
      */
-    public void setHeaders(ArrayList<Pair<String, String>> headers) {
+    public void setHeaders(ArrayList<Header> headers) {
         this.request_headers = headers;
     }
 
@@ -224,7 +238,7 @@ public class APIRequest {
      *
      * @param parameters ArrayList<Pair<String, String>> new body parameters
      */
-    public void setParameters(ArrayList<Pair<String, String>> parameters) {
+    public void setParameters(ArrayList<Parameter> parameters) {
         this.request_parameters = parameters;
     }
 
@@ -244,7 +258,7 @@ public class APIRequest {
      *
      * @param clientBuilder {@link OkHttpClient.Builder} builder of the client
      */
-    public void setClientBuilder(OkHttpClient.Builder clientBuilder) {
+    public void setCustomClientBuilder(OkHttpClient.Builder clientBuilder) {
         this.clientBuilder = clientBuilder;
     }
 
@@ -281,8 +295,8 @@ public class APIRequest {
 
             // Adds URL parameters if the request type is GET
             if (requestType == GET_REQUEST) {
-                for (Pair<String, String> pair : request_parameters) {
-                    urlBuilder.addQueryParameter(pair.first, pair.second);
+                for (Parameter parameter : request_parameters) {
+                    urlBuilder.addQueryParameter(parameter.getParameter_key(), parameter.getParameter_value());
                 }
             }
 
@@ -293,16 +307,16 @@ public class APIRequest {
             // Adds the form body parameters if the request type is POST
             FormBody.Builder formBodyBuilder = new FormBody.Builder();
             if (requestType == POST_REQUEST) {
-                for (Pair<String, String> pair : request_parameters) {
-                    formBodyBuilder.add(pair.first, pair.second);
+                for (Parameter parameter : request_parameters) {
+                    formBodyBuilder.add(parameter.getParameter_key(), parameter.getParameter_value());
                 }
             }
             FormBody body = formBodyBuilder.build();
 
             // Adds the request headers and the POST form body if available
             Request.Builder requestBuilder = new Request.Builder();
-            for (Pair<String, String> pair : request_headers) {
-                requestBuilder.addHeader(pair.first, pair.second);
+            for (Header header : request_headers) {
+                requestBuilder.addHeader(header.getHeader_key(), header.getHeader_value());
                 if (requestType == POST_REQUEST) requestBuilder.post(body);
             }
             Request request = requestBuilder.url(url).build();

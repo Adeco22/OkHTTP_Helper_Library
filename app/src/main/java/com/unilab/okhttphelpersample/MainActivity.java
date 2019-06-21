@@ -4,20 +4,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Pair;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.unilab.okhttphelperlibrary.APIRequest;
+import com.unilab.okhttphelperlibrary.Parameter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 
@@ -65,31 +63,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void executeNewRequest() {
-        /*APIRequest apiRequest = new APIRequest("'http://dummy.restapiexample.com/api/v1/employees");
-        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
-            @Override
-            public void onPreRequest() {
-
-            }
-
-            @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
-            }
-
-            @Override
-            public void onResponseSuccess(String result, int statusCode) {
-                tv_output.setText(result);
-            }
-
-            @Override
-            public void onResponseFailure(String error, Call call) {
-
-            }
-        });
-
-        apiRequest.executeRequest(context);*/
-
         APIRequest apiRequest1 = new APIRequest("https://nba.com", null, null);
         apiRequest1.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
             @Override
@@ -110,6 +83,28 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onResponseFailure(String error, Call call) {
                 tv_output.setText("onResponseError");
+
+            }
+        });
+
+        apiRequest1.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+            @Override
+            public void onPreRequest() {
+
+            }
+
+            @Override
+            public void onRequestFailure(String error, int errorCode) {
+
+            }
+
+            @Override
+            public void onResponseSuccess(String result, int statusCode) {
+
+            }
+
+            @Override
+            public void onResponseFailure(String error, Call call) {
 
             }
         });
@@ -153,9 +148,9 @@ public class MainActivity extends AppCompatActivity {
 
     //"https://reqres.in/api/users?delay=5"
     private void executeRequestWithHeaders() {
-        ArrayList<Pair<String, String>> parameters = new ArrayList<>();
-        parameters.add(new Pair<>("v", "1.0"));
-        parameters.add(new Pair<>("user", "vogella"));
+        ArrayList<Parameter> parameters = new ArrayList<>();
+        parameters.add(new Parameter("v", "1.0"));
+        parameters.add(new Parameter("user", "vogella"));
         APIRequest request = new APIRequest("http://dummy.restapiexample.com/api/v1/employees",
                 null, parameters, APIRequest.GET_REQUEST);
 
@@ -192,9 +187,9 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void executeRequestWithParameters() {
-        ArrayList<Pair<String, String>> formData = new ArrayList<>();
-        formData.add(new Pair<>("v", "1.0"));
-        formData.add(new Pair<>("user", "vogella"));
+        ArrayList<Parameter> formData = new ArrayList<>();
+        formData.add(new Parameter("v", "1.0"));
+        formData.add(new Parameter("user", "vogella"));
         APIRequest request = new APIRequest("http://dummy.restapiexample.com/api/v1/employees",
                 null, formData, APIRequest.POST_REQUEST);
 

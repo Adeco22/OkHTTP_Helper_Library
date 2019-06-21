@@ -13,10 +13,10 @@ android {
 
 
     defaultConfig {
-        minSdkVersion 23
+        minSdkVersion 21
         targetSdkVersion 28
-        versionCode 3
-        versionName "0.7.0"
+        versionCode 4
+        versionName "0.8.0"
 
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
@@ -26,9 +26,6 @@ android {
         release {
             minifyEnabled true
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-            debuggable = false
-            jniDebuggable = false
-            renderscriptDebuggable = false
             signingConfig signingConfigs.release
         }
     }
