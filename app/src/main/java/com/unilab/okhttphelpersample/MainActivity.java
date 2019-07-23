@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -49,7 +50,7 @@ public class MainActivity extends AppCompatActivity {
         btn_execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeNewRequest();
+                executeRequestWithParameters();
             }
         });
 
@@ -189,9 +190,10 @@ public class MainActivity extends AppCompatActivity {
 
     private void executeRequestWithParameters() {
         ArrayList<Parameter> formData = new ArrayList<>();
-        formData.add(new Parameter("v", "1.0"));
-        formData.add(new Parameter("user", "vogella"));
-        APIRequest request = new APIRequest("http://dummy.restapiexample.com/api/v1/employees",
+        formData.add(new Parameter("package_name", "com.unilab.demoapplication"));
+        formData.add(new Parameter("token", "x9owdte8caaojrc59r2w4"));
+        formData.add(new Parameter("device_id", ""));
+        APIRequest request = new APIRequest("https://www.nba.com/",
                 null, formData, APIRequest.POST_REQUEST);
 
         // Add callback on response
@@ -222,6 +224,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        request.build();
+
+        Log.d("OKHTTPTESTING", request.toString());
+
+        request.setURL("http://172.29.70.126/scms/content_management/config_api/check_config/");
+        request.rebuild();
+
+        Log.d("OKHTTPTESTING", request.toString());
         // Execute the request at any time
         request.executeRequest(context);
     }

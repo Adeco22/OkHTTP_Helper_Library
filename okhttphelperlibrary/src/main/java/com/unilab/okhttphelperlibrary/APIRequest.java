@@ -27,7 +27,7 @@ import okhttp3.Response;
  * </p>
  *
  * @author Anthony Deco
- * @version 0.8.0 (alpha)
+ * @version 0.9.0 (beta)
  * @since 05/02/2019, 4:13 PM
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -40,6 +40,10 @@ public class APIRequest {
     private Handler handler;
     private int requestType;
     private OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
+    private OkHttpClient client;
+    private Request request;
+
+    private boolean clientHasBuilt = false;
 
     /**
      * TimeUnit associated with the request timeout with {@link TimeUnit#SECONDS} as default
@@ -262,70 +266,125 @@ public class APIRequest {
         this.clientBuilder = clientBuilder;
     }
 
+    public OkHttpClient.Builder getClientBuilder(){
+        if(!clientHasBuilt){
+            throw new RuntimeException("Builder is null, you must build the APIRequest first.");
+        }
+        return clientBuilder;
+    }
+
+    public Request getRequest(){
+        if(!clientHasBuilt){
+            throw new RuntimeException("Request is null, you must build the APIRequest first.");
+        }
+        return request;
+    }
+
+    public OkHttpClient getClient(){
+        if(!clientHasBuilt){
+            throw new RuntimeException("Client is null, you must build the APIRequest first.");
+        }
+        return client;
+    }
+
+    public void rebuild(){
+        clientHasBuilt = false;
+        build();
+    }
+
+    public void build(){
+        if(clientHasBuilt){
+            throw new RuntimeException(client.toString()
+                    + " has already been built, do you mean to call rebuild() ?");
+        }
+
+        if(handler == null){
+            handler = new Handler(Looper.getMainLooper());
+        }
+
+        // Checks if request is null before building
+        checkRequestIfNull();
+
+        // Builds the URL to be requested
+        HttpUrl.Builder urlBuilder;
+        HttpUrl httpUrl = HttpUrl.parse(request_URL);
+
+        // Checks if the URL is valid, if not, will trigger onRequestFailure
+        if (httpUrl != null) {
+            urlBuilder = httpUrl.newBuilder();
+        } else {
+            Log.e(TAG + " => executeRequest", ERROR_MALFORMED_URL_MESSAGE);
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    listener.onRequestFailure(ERROR_MALFORMED_URL_MESSAGE, ERROR_MALFORMED_URL);
+                }
+            });
+            return;
+        }
+
+        // Adds URL parameters if the request type is GET
+        if (requestType == GET_REQUEST) {
+            for (Parameter parameter : request_parameters) {
+                urlBuilder.addQueryParameter(parameter.getParameter_key(), parameter.getParameter_value());
+            }
+        }
+
+        // Prints out url in logs if in debug mode
+        String url = urlBuilder.build().toString();
+        Log.d(TAG + " => executeRequest", url);
+
+        // Adds the form body parameters if the request type is POST
+        FormBody.Builder formBodyBuilder = new FormBody.Builder();
+        if (requestType == POST_REQUEST) {
+            for (Parameter parameter : request_parameters) {
+                formBodyBuilder.add(parameter.getParameter_key(), parameter.getParameter_value());
+            }
+        }
+        FormBody body = formBodyBuilder.build();
+
+        // Adds the request headers
+        Request.Builder requestBuilder = new Request.Builder();
+        for (Header header : request_headers) {
+            requestBuilder.addHeader(header.getHeader_key(), header.getHeader_value());
+        }
+
+        // Specifies the request type of the OkHttpClient
+        if (requestType == GET_REQUEST) requestBuilder.get();
+        else if(requestType == POST_REQUEST) requestBuilder.post(body);
+        else if(requestType == PUT_REQUEST) requestBuilder.put(body);
+        else if(requestType == PATCH_REQUEST) requestBuilder.patch(body);
+        else if(requestType == DELETE_REQUEST) requestBuilder.delete(body);
+
+        request = requestBuilder.url(url).build();
+
+        // Calls the API request then transmits the data through the listener interface
+        client = clientBuilder
+                .connectTimeout(REQUEST_TIMEOUT, REQUEST_TIMEOUT_TIME_UNIT)
+                .build();
+
+        clientHasBuilt = true;
+    }
+
+
     /**
      * Executes the API request then informs the result to the activity via the interface,
      * see {@link onAPIRequestListener}
      */
     public void executeRequest(Context context) {
-        handler = new Handler(Looper.getMainLooper());
-        checkRequestIfNull();
+        if(!clientHasBuilt){
+            build();
+        }
+
+        if(handler == null){
+            handler = new Handler(Looper.getMainLooper());
+        }
 
         // Initiates the pre request listener method for loading screens, progress bars, etc.
         listener.onPreRequest();
 
         // Checks if device has internet connection, else, throws to onRequestFailure
         if (isConnectedToInternet(context)) {
-            // Builds the URL to be requested
-            HttpUrl.Builder urlBuilder;
-            HttpUrl p = HttpUrl.parse(request_URL);
-
-            // Checks if the URL is valid, if not, will trigger onRequestFailure
-            if (p != null) {
-                urlBuilder = p.newBuilder();
-            } else {
-                Log.e(TAG + " => executeRequest", ERROR_MALFORMED_URL_MESSAGE);
-                handler.post(new Runnable() {
-                    @Override
-                    public void run() {
-                        listener.onRequestFailure(ERROR_MALFORMED_URL_MESSAGE, ERROR_MALFORMED_URL);
-                    }
-                });
-                return;
-            }
-
-            // Adds URL parameters if the request type is GET
-            if (requestType == GET_REQUEST) {
-                for (Parameter parameter : request_parameters) {
-                    urlBuilder.addQueryParameter(parameter.getParameter_key(), parameter.getParameter_value());
-                }
-            }
-
-            // Prints out url in logs if in debug mode
-            String url = urlBuilder.build().toString();
-            Log.d(TAG + " => executeRequest", url);
-
-            // Adds the form body parameters if the request type is POST
-            FormBody.Builder formBodyBuilder = new FormBody.Builder();
-            if (requestType == POST_REQUEST) {
-                for (Parameter parameter : request_parameters) {
-                    formBodyBuilder.add(parameter.getParameter_key(), parameter.getParameter_value());
-                }
-            }
-            FormBody body = formBodyBuilder.build();
-
-            // Adds the request headers and the POST form body if available
-            Request.Builder requestBuilder = new Request.Builder();
-            for (Header header : request_headers) {
-                requestBuilder.addHeader(header.getHeader_key(), header.getHeader_value());
-                if (requestType == POST_REQUEST) requestBuilder.post(body);
-            }
-            Request request = requestBuilder.url(url).build();
-
-            // Calls the API request then transmits the data through the listener interface
-            OkHttpClient client = clientBuilder
-                    .connectTimeout(REQUEST_TIMEOUT, REQUEST_TIMEOUT_TIME_UNIT)
-                    .build();
-
             client.newCall(request).enqueue(new Callback() {
                 @Override
                 public void onFailure(@NonNull Call call, @NonNull IOException e) {
