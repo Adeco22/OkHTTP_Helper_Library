@@ -7,6 +7,7 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import java.io.IOException;
@@ -15,11 +16,14 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
-import okhttp3.FormBody;
 import okhttp3.HttpUrl;
+import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
+import okhttp3.RequestBody;
 import okhttp3.Response;
+import okio.BufferedSink;
 
 /**
  * <p>
@@ -27,7 +31,7 @@ import okhttp3.Response;
  * </p>
  *
  * @author Anthony Deco
- * @version 0.9.0 (beta)
+ * @version 0.10.2 (beta)
  * @since 05/02/2019, 4:13 PM
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -43,6 +47,14 @@ public class APIRequest {
     private OkHttpClient client;
     private Request request;
 
+    /**
+     * Base URL used by the library
+     */
+    private String base_url = "";
+
+    /**
+     * Boolean checker if client has been built
+     */
     private boolean clientHasBuilt = false;
 
     /**
@@ -266,39 +278,62 @@ public class APIRequest {
         this.clientBuilder = clientBuilder;
     }
 
-    public OkHttpClient.Builder getClientBuilder(){
-        if(!clientHasBuilt){
+    /**
+     * Gets the OkHttpClient Builder of the library, see {@link okhttp3.OkHttpClient.Builder}
+     *
+     * @return {@link #clientBuilder}
+     */
+    public OkHttpClient.Builder getClientBuilder() {
+        if (!clientHasBuilt) {
             throw new RuntimeException("Builder is null, you must build the APIRequest first.");
         }
         return clientBuilder;
     }
 
-    public Request getRequest(){
-        if(!clientHasBuilt){
+    /**
+     * Gets the OkHttpClient Request of the library, see {@link okhttp3.OkHttpClient.Builder}
+     *
+     * @return {@link #request}
+     */
+    public Request getRequest() {
+        if (!clientHasBuilt) {
             throw new RuntimeException("Request is null, you must build the APIRequest first.");
         }
         return request;
     }
 
-    public OkHttpClient getClient(){
-        if(!clientHasBuilt){
+    /**
+     * Gets the OkHttpClient of the library, see {@link OkHttpClient}
+     *
+     * @return {@link #client}
+     */
+    public OkHttpClient getClient() {
+        if (!clientHasBuilt) {
             throw new RuntimeException("Client is null, you must build the APIRequest first.");
         }
         return client;
     }
 
-    public void rebuild(){
+    /**
+     * Rebuilds the whole client, this is to prevent multiple and confusing calls for {@link #build()}
+     */
+    public void rebuild() {
         clientHasBuilt = false;
         build();
     }
 
-    public void build(){
-        if(clientHasBuilt){
+    /**
+     * Preemptively builds the client, enabling getters {@link #getClient()},
+     * {@link #getClientBuilder()} and {@link #getRequest()}.
+     * Must call {@link #rebuild()} to build again.
+     */
+    public void build() {
+        if (clientHasBuilt) {
             throw new RuntimeException(client.toString()
                     + " has already been built, do you mean to call rebuild() ?");
         }
 
-        if(handler == null){
+        if (handler == null) {
             handler = new Handler(Looper.getMainLooper());
         }
 
@@ -323,6 +358,21 @@ public class APIRequest {
             return;
         }
 
+        // Create the multi-body builder and request body object
+        MultipartBody.Builder builder = new MultipartBody.Builder();
+        RequestBody body = new RequestBody() {
+            @Nullable
+            @Override
+            public MediaType contentType() {
+                return null;
+            }
+
+            @Override
+            public void writeTo(@NonNull BufferedSink sink){
+
+            }
+        } ;
+
         // Adds URL parameters if the request type is GET
         if (requestType == GET_REQUEST) {
             for (Parameter parameter : request_parameters) {
@@ -330,18 +380,33 @@ public class APIRequest {
             }
         }
 
-        // Prints out url in logs if in debug mode
-        String url = urlBuilder.build().toString();
-        Log.d(TAG + " => executeRequest", url);
-
         // Adds the form body parameters if the request type is POST
-        FormBody.Builder formBodyBuilder = new FormBody.Builder();
-        if (requestType == POST_REQUEST) {
-            for (Parameter parameter : request_parameters) {
-                formBodyBuilder.add(parameter.getParameter_key(), parameter.getParameter_value());
+        else if (requestType == POST_REQUEST && request_parameters.size() > 0) {
+            // If the parameter is a single file
+            if(request_parameters.size() == 1 && request_parameters.get(0).isFileParameter()){
+                for (Parameter parameter: request_parameters){
+                    MediaType mediaType = MediaType.parse(parameter.getParameter_media_type());
+                    body = RequestBody.create(mediaType, parameter.getParameter_value());
+                }
+            }
+            // If there are multiple parameters
+            else {
+                for (Parameter parameter : request_parameters) {
+                    // If parameter is a file, will upload a separate request body
+                    if(parameter.isFileParameter()){
+                        RequestBody requestBody = RequestBody.create(MediaType.parse(
+                                parameter.getParameter_media_type()),
+                                parameter.getParameter_value());
+                        builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_key(), requestBody);
+                    }
+                    // Else will add as text parameter
+                    else {
+                        builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_value());
+                    }
+                }
+                body = builder.build();
             }
         }
-        FormBody body = formBodyBuilder.build();
 
         // Adds the request headers
         Request.Builder requestBuilder = new Request.Builder();
@@ -351,10 +416,14 @@ public class APIRequest {
 
         // Specifies the request type of the OkHttpClient
         if (requestType == GET_REQUEST) requestBuilder.get();
-        else if(requestType == POST_REQUEST) requestBuilder.post(body);
-        else if(requestType == PUT_REQUEST) requestBuilder.put(body);
-        else if(requestType == PATCH_REQUEST) requestBuilder.patch(body);
-        else if(requestType == DELETE_REQUEST) requestBuilder.delete(body);
+        else if (requestType == POST_REQUEST) requestBuilder.post(body);
+        else if (requestType == PUT_REQUEST) requestBuilder.put(body);
+        else if (requestType == PATCH_REQUEST) requestBuilder.patch(body);
+        else if (requestType == DELETE_REQUEST) requestBuilder.delete(body);
+
+        // Prints out url in logs if in debug mode
+        String url = urlBuilder.build().toString();
+        Log.d(TAG + " => executeRequest", url);
 
         request = requestBuilder.url(url).build();
 
@@ -366,17 +435,16 @@ public class APIRequest {
         clientHasBuilt = true;
     }
 
-
     /**
      * Executes the API request then informs the result to the activity via the interface,
      * see {@link onAPIRequestListener}
      */
     public void executeRequest(Context context) {
-        if(!clientHasBuilt){
+        if (!clientHasBuilt) {
             build();
         }
 
-        if(handler == null){
+        if (handler == null) {
             handler = new Handler(Looper.getMainLooper());
         }
 

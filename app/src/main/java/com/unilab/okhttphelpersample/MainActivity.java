@@ -4,12 +4,12 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
 
 import com.unilab.okhttphelperlibrary.APIRequest;
+import com.unilab.okhttphelperlibrary.Header;
 import com.unilab.okhttphelperlibrary.Parameter;
 
 import org.json.JSONArray;
@@ -25,6 +25,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tv_output;
     private Button btn_execute;
     private Button btn_switch;
+    private static final String TAG = MainActivity.class.getSimpleName();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         btn_execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeRequestWithParameters();
+                executeRequestWithHeaders();
             }
         });
 
@@ -63,32 +64,20 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    private void executeNewRequest() {
-        APIRequest apiRequest1 = new APIRequest("https://nba.com", null, null);
-        apiRequest1.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
-            @Override
-            public void onPreRequest() {
+    /**
+     * link 1 - https://reqres.in/api/users?page=2
+     * link 2 - https://reqres.in/api/users/2
+     */
+    private void executeRequestWithBuild() {
+        // Step 1 - create request object
+        APIRequest request = new APIRequest("https://reqres.in/api/users?page=2");
 
-            }
-
-            @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText("onRequestError");
-            }
-
-            @Override
-            public void onResponseSuccess(String result, int statusCode) {
-                tv_output.setText(result + "\nStatus Code: " + statusCode);
-            }
-
-            @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText("onResponseError");
-
-            }
-        });
-
-        apiRequest1.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        // Step 2 - setup request requirements (params, headers, request type, etc.)
+        request.setRequestType(APIRequest.GET_REQUEST);
+        request.setHeaders(null);
+        request.setParameters(null);
+        // Step 3 - setup request listener
+        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
@@ -101,7 +90,8 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onResponseSuccess(String result, int statusCode) {
-
+                tv_output.append("\n\n\n");
+                tv_output.append(result);
             }
 
             @Override
@@ -109,7 +99,95 @@ public class MainActivity extends AppCompatActivity {
 
             }
         });
-        apiRequest1.executeRequest(this);
+        // Optional - build the request
+        request.build();
+
+        // Optional - get request build data
+        request.getRequest();
+        request.getClientBuilder();
+        request.getClient();
+
+        // Step 4 - execute the request
+
+        request.executeRequest(this);
+
+        // Optional - create new request requirements then rebuild
+
+        request.setURL("https://reqres.in/api/users/2");
+
+        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+            @Override
+            public void onPreRequest() {
+
+            }
+
+            @Override
+            public void onRequestFailure(String error, int errorCode) {
+
+            }
+
+            @Override
+            public void onResponseSuccess(String result, int statusCode) {
+                tv_output.append("\n\n\n");
+                tv_output.append(result);
+            }
+
+            @Override
+            public void onResponseFailure(String error, Call call) {
+
+            }
+        });
+
+        request.rebuild();
+
+        request.executeRequest(this);
+
+    }
+
+    /**
+     * https://reqres.in/api/users
+     * <p>
+     * "name": "",
+     * "job": ""
+     */
+    private void executeNewPostRequest() {
+        // Step 1 - create request object
+        APIRequest request = new APIRequest("https://reqres.in/api/users");
+
+        // Step 2 - setup request requirements (params, headers, request type, etc.)
+        ArrayList<Parameter> parameters = new ArrayList<>();
+
+        parameters.add(new Parameter("name","tonton"));
+        parameters.add(new Parameter("job","taga kulit kay jayson"));
+
+        request.setParameters(parameters);
+
+        // Step 3 - setup request listener
+
+        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+            @Override
+            public void onPreRequest() {
+
+            }
+
+            @Override
+            public void onRequestFailure(String error, int errorCode) {
+
+            }
+
+            @Override
+            public void onResponseSuccess(String result, int statusCode) {
+                tv_output.setText(result);
+            }
+
+            @Override
+            public void onResponseFailure(String error, Call call) {
+
+            }
+        });
+
+        // Step 4 - execute the request
+        request.executeRequest(this);
     }
 
     private void executeNormalRequest() {
@@ -169,12 +247,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onResponseSuccess(String result, int statusCode) {
-                try {
-                    JSONObject array = new JSONObject(result);
-                    tv_output.setText(array.toString());
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
+                tv_output.setText(result);
             }
 
             @Override
@@ -189,12 +262,22 @@ public class MainActivity extends AppCompatActivity {
 
 
     private void executeRequestWithParameters() {
-        ArrayList<Parameter> formData = new ArrayList<>();
-        formData.add(new Parameter("package_name", "com.unilab.demoapplication"));
-        formData.add(new Parameter("token", "x9owdte8caaojrc59r2w4"));
-        formData.add(new Parameter("device_id", ""));
-        APIRequest request = new APIRequest("https://www.nba.com/",
-                null, formData, APIRequest.POST_REQUEST);
+        ArrayList<Header> headers = new ArrayList<>();
+        headers.add(new Header("Authorization", "Basic el9tbm5vbmF0bzpwYXNzd29yZDE="));
+
+        ArrayList<Parameter> parameters = new ArrayList<>();
+        Parameter fileParameter = new Parameter();
+        fileParameter.setParameter_key("");
+        fileParameter.setParameter_value("{'Year':2019,'Month':7,'Week':0,'Day':0,'AccountCoverageStatusId':0,'IsAMPUser':true,'AMPUserId':162,'IsDMUser':false,'DMUserId':0,'SubBrandClassificationId':5}");
+        fileParameter.setParameter_media_type(Parameter.MEDIA_TYPE_JSON);
+        fileParameter.setParameter_type(Parameter.TYPE_FILE);
+        parameters.add(fileParameter);
+
+        APIRequest request = new APIRequest("http://phsjulchsvr4.unilab.com.ph:1217/api/CoveragePlanList");
+
+        request.setHeaders(headers);
+        request.setParameters(parameters);
+        request.setRequestType(APIRequest.POST_REQUEST);
 
         // Add callback on response
         request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
@@ -212,10 +295,10 @@ public class MainActivity extends AppCompatActivity {
             public void onResponseSuccess(String result, int statusCode) {
                 try {
                     JSONObject array = new JSONObject(result);
-                    tv_output.setText(array.toString());
                 } catch (JSONException e) {
                     e.printStackTrace();
                 }
+                tv_output.setText(result);
             }
 
             @Override
@@ -224,14 +307,6 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        request.build();
-
-        Log.d("OKHTTPTESTING", request.toString());
-
-        request.setURL("http://172.29.70.126/scms/content_management/config_api/check_config/");
-        request.rebuild();
-
-        Log.d("OKHTTPTESTING", request.toString());
         // Execute the request at any time
         request.executeRequest(context);
     }

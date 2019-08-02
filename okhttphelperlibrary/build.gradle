@@ -33,6 +33,11 @@ android {
 
 }
 
+task createSourceJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.srcDirs
+}
+
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 

@@ -2,6 +2,7 @@ package com.unilab.okhttphelperlibrary;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import java.util.Objects;
 
@@ -13,8 +14,18 @@ import java.util.Objects;
  */
 public class Parameter implements Parcelable {
 
+    public static final int TYPE_TEXT = 963;
+    public static final int TYPE_FILE = 326;
+
+    public static final String MEDIA_TYPE_TEXT = "";
+    public static final String MEDIA_TYPE_JPEG = "image/jpeg";
+    public static final String MEDIA_TYPE_PNG = "image/png";
+    public static final String MEDIA_TYPE_JSON = "application/json; charset=utf-8";
+
     private String parameter_key;
     private String parameter_value;
+    private int parameter_type = TYPE_TEXT;
+    private String parameter_media_type = MEDIA_TYPE_TEXT;
 
     public Parameter() {
     }
@@ -24,9 +35,18 @@ public class Parameter implements Parcelable {
         this.parameter_value = parameter_value;
     }
 
+    public Parameter(String parameter_key, String parameter_value, int parameter_type, String parameter_media_type) {
+        this.parameter_key = parameter_key;
+        this.parameter_value = parameter_value;
+        this.parameter_type = parameter_type;
+        this.parameter_media_type = parameter_media_type;
+    }
+
     protected Parameter(Parcel in) {
         parameter_key = in.readString();
         parameter_value = in.readString();
+        parameter_type = in.readInt();
+        parameter_media_type = in.readString();
     }
 
     public static final Creator<Parameter> CREATOR = new Creator<Parameter>() {
@@ -57,27 +77,56 @@ public class Parameter implements Parcelable {
         this.parameter_value = parameter_value;
     }
 
+    public int getParameter_type() {
+        return parameter_type;
+    }
+
+    public void setParameter_type(int parameter_type) {
+        this.parameter_type = parameter_type;
+    }
+
+    public String getParameter_media_type() {
+        return parameter_media_type;
+    }
+
+    public void setParameter_media_type(String parameter_media_type) {
+        this.parameter_media_type = parameter_media_type;
+    }
+
+    public boolean isFileParameter(){
+        return (parameter_type == TYPE_FILE)
+                && (MEDIA_TYPE_PNG.equals(parameter_media_type)
+                || MEDIA_TYPE_JPEG.equals(parameter_media_type)
+                || MEDIA_TYPE_JSON.equals(parameter_media_type));
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Parameter)) return false;
         Parameter parameter = (Parameter) o;
-        return Objects.equals(parameter_key, parameter.parameter_key) &&
-                Objects.equals(parameter_value, parameter.parameter_value);
+        return parameter_type == parameter.parameter_type &&
+                Objects.equals(parameter_key, parameter.parameter_key) &&
+                Objects.equals(parameter_value, parameter.parameter_value) &&
+                Objects.equals(parameter_media_type, parameter.parameter_media_type);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(parameter_key, parameter_value);
+        return Objects.hash(parameter_key, parameter_value, parameter_type, parameter_media_type);
     }
 
     @Override
+    @NonNull
     public String toString() {
         return "Parameter{" +
                 "parameter_key='" + parameter_key + '\'' +
                 ", parameter_value='" + parameter_value + '\'' +
+                ", parameter_type=" + parameter_type +
+                ", parameter_media_type='" + parameter_media_type + '\'' +
                 '}';
     }
+
 
     @Override
     public int describeContents() {
@@ -88,5 +137,7 @@ public class Parameter implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeString(parameter_key);
         dest.writeString(parameter_value);
+        dest.writeInt(parameter_type);
+        dest.writeString(parameter_media_type);
     }
 }
