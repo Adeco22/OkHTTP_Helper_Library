@@ -16,6 +16,7 @@ import java.util.concurrent.TimeUnit;
 
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
@@ -31,7 +32,7 @@ import okio.BufferedSink;
  * </p>
  *
  * @author Anthony Deco
- * @version 0.10.2 (beta)
+ * @version 0.10.3 (beta)
  * @since 05/02/2019, 4:13 PM
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -359,7 +360,6 @@ public class APIRequest {
         }
 
         // Create the multi-body builder and request body object
-        MultipartBody.Builder builder = new MultipartBody.Builder();
         RequestBody body = new RequestBody() {
             @Nullable
             @Override
@@ -391,20 +391,40 @@ public class APIRequest {
             }
             // If there are multiple parameters
             else {
+                boolean hasFile = false;
+                // Check if parameter has file
                 for (Parameter parameter : request_parameters) {
-                    // If parameter is a file, will upload a separate request body
                     if(parameter.isFileParameter()){
-                        RequestBody requestBody = RequestBody.create(MediaType.parse(
-                                parameter.getParameter_media_type()),
-                                parameter.getParameter_value());
-                        builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_key(), requestBody);
-                    }
-                    // Else will add as text parameter
-                    else {
-                        builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_value());
+                        hasFile = true;
+                        break;
                     }
                 }
-                body = builder.build();
+                // If parameters has file, initializes MultipartBody
+                if(hasFile){
+                    MultipartBody.Builder builder = new MultipartBody.Builder();
+                    for (Parameter parameter : request_parameters) {
+                        // If parameter is a file, will upload a separate request body
+                        if(parameter.isFileParameter()){
+                            RequestBody requestBody = RequestBody.create(MediaType.parse(
+                                    parameter.getParameter_media_type()),
+                                    parameter.getParameter_value());
+                            builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_key(), requestBody);
+                        }
+                        // Else will add as text parameter
+                        else {
+                            builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_value());
+                        }
+                    }
+                    body = builder.build();
+                }
+                // If parameters has no file, initializes FormBody
+                else {
+                    FormBody.Builder builder = new FormBody.Builder();
+                    for (Parameter parameter : request_parameters) {
+                        builder.add(parameter.getParameter_key(), parameter.getParameter_value());
+                    }
+                    body = builder.build();
+                }
             }
         }
 

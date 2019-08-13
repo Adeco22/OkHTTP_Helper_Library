@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity {
         btn_execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                executeRequestWithHeaders();
+                executeRequestWithParameters();
             }
         });
 
@@ -157,8 +157,8 @@ public class MainActivity extends AppCompatActivity {
         // Step 2 - setup request requirements (params, headers, request type, etc.)
         ArrayList<Parameter> parameters = new ArrayList<>();
 
-        parameters.add(new Parameter("name","tonton"));
-        parameters.add(new Parameter("job","taga kulit kay jayson"));
+        parameters.add(new Parameter("name", "tonton"));
+        parameters.add(new Parameter("job", "taga kulit kay jayson"));
 
         request.setParameters(parameters);
 
@@ -258,6 +258,38 @@ public class MainActivity extends AppCompatActivity {
 
         // Execute the request at any time
         request.executeRequest(context);
+    }
+
+    private void executeDaveRequest() {
+        ArrayList<Parameter> parameters = new ArrayList<>();
+        parameters.add(new Parameter("package_name", "com.rnd.concealtest"));
+        parameters.add(new Parameter("token", "k7plzk9cxuyxvq8pj0t6d"));
+        parameters.add(new Parameter("device_id", ""));
+        APIRequest apiRequest = new APIRequest("http://172.29.70.126/scms/content_management/config_api/check_config");
+        apiRequest.setRequestType(APIRequest.POST_REQUEST);
+        apiRequest.setParameters(parameters);
+        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+            @Override
+            public void onPreRequest() {
+
+            }
+
+            @Override
+            public void onRequestFailure(String error, int errorCode) {
+
+            }
+
+            @Override
+            public void onResponseSuccess(String result, int statusCode) {
+                tv_output.setText(result);
+            }
+
+            @Override
+            public void onResponseFailure(String error, Call call) {
+
+            }
+        });
+        apiRequest.executeRequest(this);
     }
 
 
