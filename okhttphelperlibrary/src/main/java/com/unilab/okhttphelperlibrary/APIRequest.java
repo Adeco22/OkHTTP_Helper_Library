@@ -2,20 +2,26 @@ package com.unilab.okhttphelperlibrary;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
-import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.annotation.StringDef;
+import android.text.SpannableStringBuilder;
 import android.util.Log;
 
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Authenticator;
 import okhttp3.Call;
 import okhttp3.Callback;
+import okhttp3.Credentials;
 import okhttp3.FormBody;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
@@ -24,6 +30,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
+import okhttp3.Route;
 import okio.BufferedSink;
 
 /**
@@ -32,7 +39,7 @@ import okio.BufferedSink;
  * </p>
  *
  * @author Anthony Deco
- * @version 0.10.3 (beta)
+ * @version 0.11.0 (beta)
  * @since 05/02/2019, 4:13 PM
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -47,6 +54,8 @@ public class APIRequest {
     private OkHttpClient.Builder clientBuilder = new OkHttpClient.Builder();
     private OkHttpClient client;
     private Request request;
+    private SpannableStringBuilder credentialUsername;
+    private SpannableStringBuilder credentialPassword;
 
     /**
      * Base URL used by the library
@@ -266,7 +275,7 @@ public class APIRequest {
      *                    , {@link #POST_REQUEST}, {@link #PUT_REQUEST}, {@link #PATCH_REQUEST} and
      *                    {@link #DELETE_REQUEST}
      */
-    public void setRequestType(int requestType) {
+    public void setRequestType(@RequestType int requestType) {
         this.requestType = requestType;
     }
 
@@ -368,10 +377,10 @@ public class APIRequest {
             }
 
             @Override
-            public void writeTo(@NonNull BufferedSink sink){
+            public void writeTo(@NonNull BufferedSink sink) {
 
             }
-        } ;
+        };
 
         // Adds URL parameters if the request type is GET
         if (requestType == GET_REQUEST) {
@@ -383,8 +392,8 @@ public class APIRequest {
         // Adds the form body parameters if the request type is POST
         else if (requestType == POST_REQUEST && request_parameters.size() > 0) {
             // If the parameter is a single file
-            if(request_parameters.size() == 1 && request_parameters.get(0).isFileParameter()){
-                for (Parameter parameter: request_parameters){
+            if (request_parameters.size() == 1 && request_parameters.get(0).isFileParameter()) {
+                for (Parameter parameter : request_parameters) {
                     MediaType mediaType = MediaType.parse(parameter.getParameter_media_type());
                     body = RequestBody.create(mediaType, parameter.getParameter_value());
                 }
@@ -394,17 +403,17 @@ public class APIRequest {
                 boolean hasFile = false;
                 // Check if parameter has file
                 for (Parameter parameter : request_parameters) {
-                    if(parameter.isFileParameter()){
+                    if (parameter.isFileParameter()) {
                         hasFile = true;
                         break;
                     }
                 }
                 // If parameters has file, initializes MultipartBody
-                if(hasFile){
+                if (hasFile) {
                     MultipartBody.Builder builder = new MultipartBody.Builder();
                     for (Parameter parameter : request_parameters) {
                         // If parameter is a file, will upload a separate request body
-                        if(parameter.isFileParameter()){
+                        if (parameter.isFileParameter()) {
                             RequestBody requestBody = RequestBody.create(MediaType.parse(
                                     parameter.getParameter_media_type()),
                                     parameter.getParameter_value());
@@ -435,11 +444,13 @@ public class APIRequest {
         }
 
         // Specifies the request type of the OkHttpClient
-        if (requestType == GET_REQUEST) requestBuilder.get();
-        else if (requestType == POST_REQUEST) requestBuilder.post(body);
-        else if (requestType == PUT_REQUEST) requestBuilder.put(body);
-        else if (requestType == PATCH_REQUEST) requestBuilder.patch(body);
-        else if (requestType == DELETE_REQUEST) requestBuilder.delete(body);
+        switch (requestType) {
+            case GET_REQUEST: requestBuilder.get(); break;
+            case POST_REQUEST: requestBuilder.post(body); break;
+            case PUT_REQUEST: requestBuilder.put(body); break;
+            case PATCH_REQUEST: requestBuilder.patch(body); break;
+            case DELETE_REQUEST: requestBuilder.delete(body); break;
+        }
 
         // Prints out url in logs if in debug mode
         String url = urlBuilder.build().toString();
@@ -447,10 +458,19 @@ public class APIRequest {
 
         request = requestBuilder.url(url).build();
 
-        // Calls the API request then transmits the data through the listener interface
-        client = clientBuilder
-                .connectTimeout(REQUEST_TIMEOUT, REQUEST_TIMEOUT_TIME_UNIT)
-                .build();
+        // TODO: add credentials builder
+        clientBuilder.connectTimeout(REQUEST_TIMEOUT, REQUEST_TIMEOUT_TIME_UNIT);
+        if (false) {
+            clientBuilder.authenticator(new Authenticator() {
+                @Override
+                public Request authenticate(@Nullable Route route, @NonNull Response response) {
+                    String credential = Credentials.basic("scott", "tiger");
+                    return response.request().newBuilder().header("Authorization", credential).build();
+                }
+            });
+
+        }
+        client = clientBuilder.build();
 
         clientHasBuilt = true;
     }
@@ -520,30 +540,21 @@ public class APIRequest {
         if (request_parameters == null) request_parameters = new ArrayList<>();
         if (request_URL == null) request_URL = "";
         if (clientBuilder == null) clientBuilder = new OkHttpClient.Builder();
-        if (requestType != GET_REQUEST &&
-                requestType != POST_REQUEST &&
-                requestType != PUT_REQUEST &&
-                requestType != PATCH_REQUEST &&
-                requestType != DELETE_REQUEST) requestType = GET_REQUEST;
     }
 
     /**
-     * Checks the current active networks of the device then individually checks them for internet access
+     * Checks the current active network of the device then checks for internet access
      *
      * @param context {@link Context} where the activity is held
      * @return boolean true if there is an active internet connection with the list of networks,
      * else will return false
      */
-    public static boolean isConnectedToInternet(Context context) {
+    public boolean isConnectedToInternet(Context context) {
         ConnectivityManager connectivity = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
         if (connectivity != null) {
-            Network[] networks = connectivity.getAllNetworks();
-            NetworkInfo networkInfo;
-            for (Network mNetwork : networks) {
-                networkInfo = connectivity.getNetworkInfo(mNetwork);
-                if (NetworkInfo.State.CONNECTED.equals(networkInfo.getState())) {
-                    return true;
-                }
+            NetworkInfo networkInfo = connectivity.getActiveNetworkInfo();
+            if (networkInfo != null) {
+                return networkInfo.isConnected();
             }
         }
         return false;
@@ -565,7 +576,7 @@ public class APIRequest {
          *
          * @param error {@link String} error message
          */
-        void onRequestFailure(String error, int errorCode);
+        void onRequestFailure(String error, @ErrorCode int errorCode);
 
         /**
          * Interface method for retrieving the response and its response code
@@ -582,5 +593,20 @@ public class APIRequest {
          * @param call  {@link Call} of the API
          */
         void onResponseFailure(String error, Call call);
+    }
+
+    @IntDef({GET_REQUEST, POST_REQUEST, PUT_REQUEST, PATCH_REQUEST, DELETE_REQUEST})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface RequestType {
+    }
+
+    @IntDef({ERROR_ON_REQUEST, ERROR_MALFORMED_URL, ERROR_NO_CONNECTION})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ErrorCode {
+    }
+
+    @StringDef({ ERROR_MALFORMED_URL_MESSAGE, ERROR_NO_CONNECTION_MESSAGE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ErrorMessage {
     }
 }

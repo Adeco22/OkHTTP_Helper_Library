@@ -2,15 +2,17 @@ package com.unilab.okhttphelperlibrary;
 
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.annotation.NonNull;
 
 import java.util.Objects;
 
 /**
  * @author Anthony Deco
  * @since 5:20 PM 5/30/2019
- *
+ * <p>
  * Header object
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class Header implements Parcelable {
 
     private String header_key;
@@ -71,6 +73,7 @@ public class Header implements Parcelable {
         return Objects.hash(header_key, header_value);
     }
 
+    @NonNull
     @Override
     public String toString() {
         return "Header{" +

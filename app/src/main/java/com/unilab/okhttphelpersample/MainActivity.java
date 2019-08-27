@@ -4,6 +4,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -14,7 +15,6 @@ import com.unilab.okhttphelperlibrary.Parameter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 
@@ -301,11 +301,11 @@ public class MainActivity extends AppCompatActivity {
         Parameter fileParameter = new Parameter();
         fileParameter.setParameter_key("");
         fileParameter.setParameter_value("{'Year':2019,'Month':7,'Week':0,'Day':0,'AccountCoverageStatusId':0,'IsAMPUser':true,'AMPUserId':162,'IsDMUser':false,'DMUserId':0,'SubBrandClassificationId':5}");
-        fileParameter.setParameter_media_type(Parameter.MEDIA_TYPE_JSON);
+        fileParameter.setCustomParameter_media_type("application/x-www-form-urlencoded");
         fileParameter.setParameter_type(Parameter.TYPE_FILE);
         parameters.add(fileParameter);
 
-        APIRequest request = new APIRequest("http://phsjulchsvr4.unilab.com.ph:1217/api/CoveragePlanList");
+        APIRequest request = new APIRequest("http://phsjulchsvr4.unilab.com.ph:1218/api/CoveragePlanList");
 
         request.setHeaders(headers);
         request.setParameters(parameters);
@@ -325,12 +325,9 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onResponseSuccess(String result, int statusCode) {
-                try {
-                    JSONObject array = new JSONObject(result);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
                 tv_output.setText(result);
+                Log.d(TAG, "result = " + result);
+                Log.d(TAG, "status code = " + statusCode);
             }
 
             @Override
