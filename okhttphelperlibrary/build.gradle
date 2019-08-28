@@ -1,4 +1,21 @@
 apply plugin: 'com.android.library'
+apply plugin: 'com.novoda.bintray-release'
+
+publish {
+    def groupProjectID = 'com.unilab.okhttphelperlibrary'
+    def artifactProjectID = 'okhttp-helper-library'
+    def publishVersionID = '0.11.0'
+    def description = ''
+    def web = ''
+
+    userOrg = 'adeco22'
+    repoName = 'OkHTTP-Helper-Library'
+    groupId = groupProjectID
+    artifactId = artifactProjectID
+    publishVersion = publishVersionID
+    desc = description
+    website = web
+}
 
 android {
     signingConfigs {
@@ -37,6 +54,8 @@ task createSourceJar(type: Jar) {
     classifier = 'sources'
     from android.sourceSets.main.java.srcDirs
 }
+
+
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
