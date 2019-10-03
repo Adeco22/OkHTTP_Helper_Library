@@ -39,7 +39,7 @@ import okio.BufferedSink;
  * </p>
  *
  * @author Anthony Deco
- * @version 0.11.0 (beta)
+ * @version 0.12.1 (beta)
  * @since 05/02/2019, 4:13 PM
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -382,57 +382,73 @@ public class APIRequest {
             }
         };
 
-        // Adds URL parameters if the request type is GET
-        if (requestType == GET_REQUEST) {
-            for (Parameter parameter : request_parameters) {
-                urlBuilder.addQueryParameter(parameter.getParameter_key(), parameter.getParameter_value());
+        if(request_parameters.size() > 0){
+            // Adds URL parameters if the request type is GET
+            if (requestType == GET_REQUEST) {
+                for (Parameter parameter : request_parameters) {
+                    urlBuilder.addQueryParameter(parameter.getParameter_key(), parameter.getParameter_value());
+                }
             }
-        }
 
-        // Adds the form body parameters if the request type is POST
-        else if (requestType == POST_REQUEST && request_parameters.size() > 0) {
-            // If the parameter is a single file
-            if (request_parameters.size() == 1 && request_parameters.get(0).isFileParameter()) {
-                for (Parameter parameter : request_parameters) {
-                    MediaType mediaType = MediaType.parse(parameter.getParameter_media_type());
-                    body = RequestBody.create(mediaType, parameter.getParameter_value());
-                }
-            }
-            // If there are multiple parameters
-            else {
-                boolean hasFile = false;
-                // Check if parameter has file
-                for (Parameter parameter : request_parameters) {
-                    if (parameter.isFileParameter()) {
-                        hasFile = true;
-                        break;
-                    }
-                }
-                // If parameters has file, initializes MultipartBody
-                if (hasFile) {
-                    MultipartBody.Builder builder = new MultipartBody.Builder();
+            // Adds the form body parameters if the request type is POST
+            else if (requestType == POST_REQUEST) {
+                // If the parameter is a single file
+                if (request_parameters.size() == 1 && request_parameters.get(0).isFileParameter()) {
                     for (Parameter parameter : request_parameters) {
-                        // If parameter is a file, will upload a separate request body
-                        if (parameter.isFileParameter()) {
-                            RequestBody requestBody = RequestBody.create(MediaType.parse(
-                                    parameter.getParameter_media_type()),
-                                    parameter.getParameter_value());
-                            builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_key(), requestBody);
-                        }
-                        // Else will add as text parameter
-                        else {
-                            builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_value());
+                        if(parameter.isFileValue()){
+                            MultipartBody.Builder builder = new MultipartBody.Builder();
+                            RequestBody requestBody = RequestBody.create(MediaType.parse(parameter.getMIME_type()), parameter.getParameter_file());
+                            builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_file().getName(), requestBody);
+                            body = builder.build();
+                        } else {
+                            body = RequestBody.create(MediaType.parse(parameter.getMIME_type()), parameter.getParameter_value());
                         }
                     }
-                    body = builder.build();
                 }
-                // If parameters has no file, initializes FormBody
+                // If there are multiple parameters
                 else {
-                    FormBody.Builder builder = new FormBody.Builder();
+                    boolean hasFile = false;
+                    // Check if parameter has file
                     for (Parameter parameter : request_parameters) {
-                        builder.add(parameter.getParameter_key(), parameter.getParameter_value());
+                        if (parameter.isFileParameter()) {
+                            hasFile = true;
+                            break;
+                        }
                     }
-                    body = builder.build();
+                    // If parameters has file, initializes MultipartBody
+                    if (hasFile) {
+                        MultipartBody.Builder builder = new MultipartBody.Builder();
+                        for (Parameter parameter : request_parameters) {
+                            // If parameter is a file, will upload a separate request body
+                            if (parameter.isFileParameter()) {
+                                RequestBody requestBody;
+                                if(parameter.isFileValue()){
+                                    requestBody = RequestBody.create(MediaType.parse(
+                                            parameter.getMIME_type()),
+                                            parameter.getParameter_file());
+                                } else {
+                                    requestBody = RequestBody.create(MediaType.parse(
+                                            parameter.getMIME_type()),
+                                            parameter.getParameter_value());
+                                }
+
+                                builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_key(), requestBody);
+                            }
+                            // Else will add as text parameter
+                            else {
+                                builder.addFormDataPart(parameter.getParameter_key(), parameter.getParameter_value());
+                            }
+                        }
+                        body = builder.build();
+                    }
+                    // If parameters has no file, initializes FormBody
+                    else {
+                        FormBody.Builder builder = new FormBody.Builder();
+                        for (Parameter parameter : request_parameters) {
+                            builder.add(parameter.getParameter_key(), parameter.getParameter_value());
+                        }
+                        body = builder.build();
+                    }
                 }
             }
         }
