@@ -1,4 +1,4 @@
-package com.unilab.okhttphelperlibrary;
+package com.unilab.okhttphelperlibrary.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;

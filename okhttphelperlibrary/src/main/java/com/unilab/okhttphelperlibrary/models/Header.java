@@ -1,4 +1,4 @@
-package com.unilab.okhttphelperlibrary;
+package com.unilab.okhttphelperlibrary.models;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -7,10 +7,10 @@ import android.support.annotation.NonNull;
 import java.util.Objects;
 
 /**
+ * Convenience class for Headers
+ *
  * @author Anthony Deco
  * @since 5:20 PM 5/30/2019
- * <p>
- * Header object
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
 public class Header implements Parcelable {

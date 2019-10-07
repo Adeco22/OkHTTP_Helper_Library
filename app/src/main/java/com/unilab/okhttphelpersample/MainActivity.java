@@ -20,8 +20,8 @@ import android.widget.Button;
 import android.widget.TextView;
 
 import com.unilab.okhttphelperlibrary.APIRequest;
-import com.unilab.okhttphelperlibrary.Header;
-import com.unilab.okhttphelperlibrary.Parameter;
+import com.unilab.okhttphelperlibrary.models.Header;
+import com.unilab.okhttphelperlibrary.models.Parameter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -131,18 +131,18 @@ public class MainActivity extends AppCompatActivity {
         Log.d(TAG, "filename: " + file.getName());
 
         APIRequest apiRequest = new APIRequest("http://phsjulchsvr4.unilab.com.ph:1218/api/fileupload");
-        apiRequest.setRequestType(APIRequest.POST_REQUEST);
+        apiRequest.setCurrentRequestType(APIRequest.POST_REQUEST);
         apiRequest.setHeaders(headerList);
         apiRequest.setParameters(parameters);
-        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
             }
 
             @Override
@@ -151,14 +151,14 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText(error);
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
             }
         });
         apiRequest.executeRequest(this);
     }
 
-    private void executeRawRequest(){
+    private void executeRawRequest() {
         ArrayList<Header> headerList = new ArrayList<>();
         headerList.add(new Header("Authorization", "Basic " + Base64.encodeToString("m_jppalacpac:password1".getBytes(), Base64.NO_WRAP)));
 
@@ -184,18 +184,18 @@ public class MainActivity extends AppCompatActivity {
         parameters.add(parameter);
 
         APIRequest apiRequest = new APIRequest("http://phsjulchsvr4.unilab.com.ph:1218/api/CoveragePlanList");
-        apiRequest.setRequestType(APIRequest.POST_REQUEST);
+        apiRequest.setCurrentRequestType(APIRequest.POST_REQUEST);
         apiRequest.setHeaders(headerList);
         apiRequest.setParameters(parameters);
-        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
             }
 
             @Override
@@ -204,8 +204,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText(error);
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
             }
         });
         apiRequest.executeRequest(this);
@@ -228,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
         btn_execute.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                attachFile();
+                executeTimeoutRequest();
             }
         });
 
@@ -250,18 +250,18 @@ public class MainActivity extends AppCompatActivity {
         APIRequest request = new APIRequest("https://reqres.in/api/users?page=2");
 
         // Step 2 - setup request requirements (params, headers, request type, etc.)
-        request.setRequestType(APIRequest.GET_REQUEST);
+        request.setCurrentRequestType(APIRequest.GET_REQUEST);
         request.setHeaders(null);
         request.setParameters(null);
         // Step 3 - setup request listener
-        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        request.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
+            public void onRequestFailure(String errorMessage, int errorCode) {
 
             }
 
@@ -272,7 +272,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
 
             }
         });
@@ -280,9 +280,9 @@ public class MainActivity extends AppCompatActivity {
         request.build();
 
         // Optional - get request build data
-        request.getRequest();
-        request.getClientBuilder();
-        request.getClient();
+        request.getCurrentRequest();
+        request.getCurrentClientBuilder();
+        request.getCurrentClient();
 
         // Step 4 - execute the request
 
@@ -292,14 +292,14 @@ public class MainActivity extends AppCompatActivity {
 
         request.setURL("https://reqres.in/api/users/2");
 
-        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        request.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
+            public void onRequestFailure(String errorMessage, int errorCode) {
 
             }
 
@@ -310,7 +310,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
 
             }
         });
@@ -341,14 +341,14 @@ public class MainActivity extends AppCompatActivity {
 
         // Step 3 - setup request listener
 
-        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        request.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
+            public void onRequestFailure(String errorMessage, int errorCode) {
 
             }
 
@@ -358,7 +358,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
 
             }
         });
@@ -371,15 +371,15 @@ public class MainActivity extends AppCompatActivity {
         APIRequest request = new APIRequest("http://dummy.restapiexample.com/api/v1/employees");
 
         // Add callback on response
-        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        request.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
                 tv_output.setText("Requesting Data...");
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
             }
 
             @Override
@@ -393,8 +393,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText(error);
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
             }
         });
 
@@ -411,15 +411,15 @@ public class MainActivity extends AppCompatActivity {
                 null, parameters, APIRequest.GET_REQUEST);
 
         // Add callback on response
-        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        request.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
                 tv_output.setText("Requesting Data...");
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
             }
 
             @Override
@@ -428,8 +428,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText(error);
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
             }
         });
 
@@ -443,7 +443,7 @@ public class MainActivity extends AppCompatActivity {
 
         ArrayList<Parameter> parameters = new ArrayList<>();
         Parameter parameter = new Parameter();
-        //parameter.setParameter_key(offlineFile.getOfflineFile_fileName());
+        parameter.setParameter_key("");
         parameter.setParameter_type(Parameter.TYPE_FILE);
         parameter.setCustomParameter_media_type(Parameter.MEDIA_TYPE_PNG);
         parameter.setParameter_file(new File(Environment.getDataDirectory(), ""));
@@ -451,18 +451,18 @@ public class MainActivity extends AppCompatActivity {
         parameters.add(parameter);
 
         APIRequest apiRequest = new APIRequest("http://phsjulchsvr4.unilab.com.ph:1218/api/fileupload");
-        apiRequest.setRequestType(APIRequest.POST_REQUEST);
+        apiRequest.setCurrentRequestType(APIRequest.POST_REQUEST);
         apiRequest.setHeaders(headerList);
         apiRequest.setParameters(parameters);
-        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
 
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
             }
 
             @Override
@@ -471,8 +471,37 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText(error);
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
+            }
+        });
+        apiRequest.executeRequest(this);
+    }
+
+    private void executeTimeoutRequest() {
+
+        APIRequest apiRequest = new APIRequest("http://example.com:81");
+        apiRequest.setCurrentRequestType(APIRequest.GET_REQUEST);
+        apiRequest.setRequestTimeoutInSecs(1);
+        apiRequest.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
+            @Override
+            public void onPreRequest() {
+
+            }
+
+            @Override
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
+            }
+
+            @Override
+            public void onResponseSuccess(String result, int statusCode) {
+                tv_output.setText(result);
+            }
+
+            @Override
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
             }
         });
         apiRequest.executeRequest(this);
@@ -495,18 +524,18 @@ public class MainActivity extends AppCompatActivity {
 
         request.setHeaders(headers);
         request.setParameters(parameters);
-        request.setRequestType(APIRequest.POST_REQUEST);
+        request.setCurrentRequestType(APIRequest.POST_REQUEST);
 
         // Add callback on response
-        request.setOnAPIRequestFinishedListener(new APIRequest.onAPIRequestListener() {
+        request.setOnAPIRequestFinishedListener(new APIRequest.OnAPIRequestListener() {
             @Override
             public void onPreRequest() {
                 tv_output.setText("Requesting Data...");
             }
 
             @Override
-            public void onRequestFailure(String error, int errorCode) {
-                tv_output.setText(error);
+            public void onRequestFailure(String errorMessage, int errorCode) {
+                tv_output.setText(errorMessage);
             }
 
             @Override
@@ -517,8 +546,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onResponseFailure(String error, Call call) {
-                tv_output.setText(error);
+            public void onResponseFailure(String errorMessage, int errorCode, Call call) {
+                tv_output.setText(errorMessage);
             }
         });
 
